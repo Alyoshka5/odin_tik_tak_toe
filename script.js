@@ -173,7 +173,6 @@ const gameExecutor = (() => {
     }
 
     function makeMove() {
-        console.log('e');
         if (turnP1) {
             if (!p1.placeMarker(this)) return;
         } else {
