@@ -1,15 +1,29 @@
+:root {
+    --border-width: 10px;
+}
+
 body {
     height: 100vh;
+    margin: 0;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
 }
 
-table, td {
-    border: 4px solid #000;
+table {
     border-collapse: collapse;
 }
 
+td:nth-child(2) {
+    border-left: var(--border-width) solid #000;
+    border-right: var(--border-width) solid #000;
+}
+
+tbody:nth-child(2) {
+    border-top: var(--border-width) solid #000;
+    border-bottom: var(--border-width) solid #000;
+}
 
 td {
     width: 160px;
@@ -17,15 +31,43 @@ td {
     text-align: center;
     font-size: 120px;
 }
-
-@keyframes changeColor {
-    from { color: black; }
-    50% { color: red; }
-    to { color: black; }
-}
+td:hover { cursor: pointer; }
 
 .winner_row {
-    animation: changeColor 1.5s ease-in-out infinite;
+    color: red;
 }
 
-td:hover { cursor: pointer; }
+#winner_display {
+    font-size: 45px;
+    margin: 20px 0;
+}
+
+.player_form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+.player_form h2 {
+    display: inline;
+    margin: 0;
+}
+
+.player_inputs .player > * {
+    margin: 5px;
+}
+
+.input_errors {
+    color: red;
+    margin: 0;
+}
+
+#start_button {
+    background-color: rgb(30, 252, 78);
+    font-size: 18px;
+    /* margin: 20px 0; */
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+}
+#start_button:hover { cursor: pointer; }

@@ -1,7 +1,5 @@
-// Symbols: ✕ ⭕
-
 const gameBoard = (() => {
-    const table = document.querySelector('.board');
+    const table = document.querySelector('#board');
 
     let board = [[' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']];
     let winIndex;
@@ -19,6 +17,8 @@ const gameBoard = (() => {
             `;
         }
     }
+
+    const clearBoard = () => { board = [[' ', ' ', ' '], [' ', ' ', ' '], [' ', ' ', ' ']] }
 
     const getTile = (row, col) => {
         return board[row][col];
@@ -42,7 +42,6 @@ const gameBoard = (() => {
     function victoryRow(row, tiles) {
         if (row[0] != ' ' && row[0] === row[1] && row[0] === row[2]) {
             winIndex = tiles;
-            console.log(winIndex);
             return true;
         }
         return false;
@@ -56,11 +55,51 @@ const gameBoard = (() => {
         return winIndex;
     }
 
-    return { displayBoard, getTile, updateBoard, board, checkWin, checkTie, getWinIndex };
+    return { displayBoard, clearBoard, getTile, updateBoard, checkWin, checkTie, getWinIndex };
 })();
 
 
-const playerFactory = (marker) => {
+
+const displayExecutor = (() => {
+    
+    const winnerDisplay = document.querySelector('#winner_display');
+
+    const clearWinnerDisplay = () => { winnerDisplay.textContent = '' }
+
+    const displayGameOver = (won, tiles, winner) => {
+        if (won) {
+            displayWinRow(tiles);
+            announceWinner(winner);
+        } else {
+            announceTie();
+        }
+    }
+
+    function displayWinRow(tiles) {
+        let winIndex = gameBoard.getWinIndex();
+        for (let i = 0; i < 3; i++) {
+            let tileIndex = (winIndex[i][0] * 3) + winIndex[i][1];
+            let tile = tiles[tileIndex];
+            tile.classList.add('winner_row')
+        }
+    }
+
+    function announceWinner(winner) {
+        winnerDisplay.textContent = winner.getName() + " won!";
+    }
+    
+    function announceTie() {
+        winnerDisplay.textContent = "It's a tie!";
+    }
+
+    return { displayGameOver, clearWinnerDisplay }
+})();
+
+const playerFactory = (isPlayer1) => {
+
+    const errorDisplay = document.querySelector('.input_errors');
+    let marker;
+    let name;
 
     const placeMarker = (tile) => {
         let row = tile.getAttribute('data-row');
@@ -73,41 +112,75 @@ const playerFactory = (marker) => {
         return false;
     };
 
-    return { placeMarker };
-}
-
-const actionExecuter = (() => {
-
-    const displayWinRow = (tiles) => {
-        let winIndex = gameBoard.getWinIndex();
-        for (let i = 0; i < 3; i++) {
-            let tileIndex = (winIndex[i][0] * 3) + winIndex[i][1];
-            let tile = tiles[tileIndex];
-            tile.classList.add('winner_row')
+    const initiatePlayer = () => {
+        const inputedName = document.querySelector(`#p${isPlayer1 ? 1 : 2}_name`).value;
+        const inputedMarker = document.querySelector(`#p${isPlayer1 ? 1 : 2}_marker`).value;
+        if (isPlayer1 && !validateInputs(inputedName, inputedMarker)) return false;
+        marker = inputedMarker; 
+        name = inputedName;
+        return true;
+    }
+   
+    function validateInputs(name, marker) {
+        const name2 = document.querySelector(`#p2_name`).value;
+        const marker2 = document.querySelector(`#p2_marker`).value;
+        if (!name.replace(/\s/g, "").length || !name2.replace(/\s/g, "").length) {
+            errorDisplay.textContent = "Name must contain at least one none whitespace character";
+            return false;
+        } else if (name == name2) {
+            errorDisplay.textContent = "Both players cannot have the same name";
+            return false;
+        } else if (!marker.replace(/\s/g, "").length || !marker.replace(/\s/g, "").length) {
+            errorDisplay.textContent = "Marker cannot be whitespace";
+            return false;
+        } else if (marker == marker2) {
+            errorDisplay.textContent = "Both players cannot have the same marker";
+            return false;
+        } else {
+            errorDisplay.textContent = "";
+            return true;
         }
     }
 
-    return { displayWinRow }
-})();
+    const getName = () => { return name }
+
+    return { placeMarker, initiatePlayer, getName };
+}
 
 const gameExecutor = (() => {
     gameBoard.displayBoard();
 
-    let tiles = document.querySelectorAll('.board td');
-    let p1 = playerFactory('✕');
-    let p2 = playerFactory('⭕');
-    let turnP1 = true;
+    const startForm = document.querySelector('.player_form');
+    const startButton = document.querySelector('#start_button');
+    let tiles;
+    let p1 = playerFactory(true);
+    let p2 = playerFactory(false);
+    let turnP1;
     
-    tiles.forEach(tile => tile.addEventListener('click', makeMove));
+    startForm.addEventListener('submit', startGame);
+    
+    function startGame(e) {
+        e.preventDefault();
+        if (!p1.initiatePlayer()) return;
+        p2.initiatePlayer();
+        gameBoard.clearBoard();
+        displayExecutor.clearWinnerDisplay();
+        turnP1 = true;
+        startButton.value = "Restart"
+        gameBoard.displayBoard();
+        tiles = document.querySelectorAll('#board td');
+        tiles.forEach(tile => tile.addEventListener('click', makeMove));
+    }
 
     function makeMove() {
+        console.log('e');
         if (turnP1) {
             if (!p1.placeMarker(this)) return;
         } else {
             if (!p2.placeMarker(this)) return;
         }
         gameBoard.displayBoard();
-        tiles = document.querySelectorAll('.board td');
+        tiles = document.querySelectorAll('#board td');
         tiles.forEach(tile => tile.addEventListener('click', makeMove));
         checkGameOver();
         turnP1 = !turnP1;
@@ -115,14 +188,12 @@ const gameExecutor = (() => {
 
     function checkGameOver() {
         if (gameBoard.checkWin()) {
-            console.log("winner");
             tiles.forEach(tile => tile.removeEventListener('click', makeMove));
-            Animator.displayWinRow(tiles);
+            let winner = turnP1 ? p1 : p2;
+            displayExecutor.displayGameOver(true, tiles, winner);
         }
         else if (gameBoard.checkTie()) {
-            console.log("tie");
+            displayExecutor.displayGameOver(false);
         }
     }
-
-    return {};
 })();
